@@ -1,20 +1,89 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# BHC Membership Analytics Dashboard
 
-# Run and deploy your AI Studio app
+A modern analytics dashboard for visualizing BHC (Bellville Hockey Club) membership sales data across multiple categories and time periods.
 
-This contains everything you need to run your app locally.
+## Features
 
-View your app in AI Studio: https://ai.studio/apps/drive/1hNfdGewsZcUKbObqWJ99f0Q36QcL505D
+- **Revenue Analysis**: Trend visualization of membership revenue over time
+- **Sales Volume Tracking**: Stacked bar charts showing monthly membership sales
+- **Distribution Insights**: Pie charts comparing Legacy (BHC) vs New (PlayLocal) membership mix
+- **Interactive Filtering**: Date range selection and category highlighting
+- **Modern Design**: Monochromatic grayscale theme with color-on-highlight interaction
 
-## Run Locally
+## Membership Categories
 
-**Prerequisites:**  Node.js
+- U15 Club Membership
+- Student Club Membership
+- Junior Club Membership
+- Senior Club Membership
+- Masters Club Membership
 
+## Data Sources
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- **Legacy (BHC)**: Oct 2024 – Feb 2025
+- **New (PlayLocal)**: Mar 2025 – Jan 2026
+
+## Tech Stack
+
+- **React 19** - UI Framework
+- **TypeScript** - Type Safety
+- **Recharts** - Chart Library
+- **Tailwind CSS** - Styling
+- **Vite** - Build Tool
+- **Lucide React** - Icons
+
+## Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-org/bhc-membership-analytics.git
+   cd bhc-membership-analytics
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run the development server:
+   ```bash
+   npm run dev
+   ```
+
+4. Open [http://localhost:5173](http://localhost:5173) in your browser.
+
+## Project Structure
+
+```
+├── App.tsx                    # Main application component
+├── constants.ts               # Color palettes and raw data
+├── types.ts                   # TypeScript interfaces and enums
+├── index.html                 # HTML entry point
+├── index.tsx                  # React entry point
+├── components/
+│   └── CustomTooltip.tsx      # Reusable tooltip component
+├── services/
+│   └── dataProcessing.ts      # Data transformation utilities
+└── package.json               # Dependencies and scripts
+```
+
+## Deployment
+
+Build for production:
+```bash
+npm run build
+```
+
+Preview production build:
+```bash
+npm run preview
+```
+
+## License
+
+Private - Bellville Hockey Club

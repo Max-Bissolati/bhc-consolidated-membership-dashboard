@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { BarChart3, TrendingUp, Users, Wallet, PieChart as PieIcon, Filter, Check, Calendar } from 'lucide-react';
 import { getRawTimeline, aggregateStats } from './services/dataProcessing';
-import { CATEGORY_COLORS } from './constants';
+import { GRAYSCALE_COLORS, HIGHLIGHT_COLORS } from './constants';
 import { MembershipCategory } from './types';
 import { CustomTooltip } from './components/CustomTooltip';
 
@@ -69,6 +69,15 @@ const App: React.FC = () => {
     return highlightedCategories.has(category) ? 4 : 1;
   };
 
+  const getColor = (category: MembershipCategory): string => {
+    if (highlightedCategories.size === 0) {
+      return GRAYSCALE_COLORS[category];
+    }
+    return highlightedCategories.has(category)
+      ? HIGHLIGHT_COLORS[category]
+      : GRAYSCALE_COLORS[category];
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-12">
       {/* Header */}
@@ -78,7 +87,7 @@ const App: React.FC = () => {
             <div className="bg-indigo-600 p-2 rounded-lg shadow-sm">
               <BarChart3 className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">Membership Analytics</h1>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">BHC Membership Analytics</h1>
           </div>
           <div className="hidden sm:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-medium text-slate-600">
             <Calendar className="w-3.5 h-3.5" />
@@ -136,7 +145,7 @@ const App: React.FC = () => {
                   >
                     <span 
                       className={`w-2 h-2 rounded-full ${isActive ? 'bg-white' : ''}`} 
-                      style={{ backgroundColor: isActive ? undefined : CATEGORY_COLORS[cat] }} 
+                      style={{ backgroundColor: getColor(cat) }}
                     />
                     {cat.replace(' Club Membership', '')}
                     {isActive && <Check className="w-3 h-3 ml-0.5" />}
@@ -204,59 +213,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Chart Section 1: Stacked Bar - Total Volume */}
-        <section className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900">Monthly Membership Sales Volume</h2>
-              <p className="text-sm text-slate-500">Total units sold per month by category</p>
-            </div>
-            {/* Simple Legend for Quick Reference */}
-            <div className="hidden sm:flex gap-4 text-xs">
-               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> U15</div>
-               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-indigo-500"></span> Senior</div>
-            </div>
-          </div>
-          
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={filteredTimeline}
-                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fill: '#64748b', fontSize: 12 }} 
-                  axisLine={false}
-                  tickLine={false}
-                  dy={10}
-                />
-                <YAxis 
-                  tick={{ fill: '#64748b', fontSize: 12 }} 
-                  axisLine={false}
-                  tickLine={false}
-                  dx={-10}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
-                
-                {Object.values(MembershipCategory).map((cat) => (
-                  <Bar 
-                    key={cat}
-                    dataKey={cat} 
-                    stackId="a" 
-                    fill={CATEGORY_COLORS[cat]} 
-                    name={cat.replace(' Club Membership', '')} 
-                    fillOpacity={getOpacity(cat)}
-                  />
-                ))}
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        {/* Chart Section 2: Line Chart - Revenue Comparison */}
+        {/* Chart Section 1: Line Chart - Revenue Comparison (Prioritized to Top) */}
         <section className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
           <div className="mb-6">
             <h2 className="text-lg font-bold text-slate-900">Revenue Trend Analysis</h2>
@@ -270,16 +227,16 @@ const App: React.FC = () => {
                 margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis 
-                  dataKey="date" 
-                  tick={{ fill: '#64748b', fontSize: 12 }} 
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: '#64748b', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                   dy={10}
                 />
-                <YAxis 
+                <YAxis
                   tickFormatter={formatCurrencyAxis}
-                  tick={{ fill: '#64748b', fontSize: 12 }} 
+                  tick={{ fill: '#64748b', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                   dx={-10}
@@ -287,58 +244,109 @@ const App: React.FC = () => {
                 <Tooltip content={<CustomTooltip currency />} />
                 <Legend iconType="plainline" wrapperStyle={{ paddingTop: '20px' }} />
                 
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue_U15" 
-                  name="U15 Revenue" 
-                  stroke={CATEGORY_COLORS[MembershipCategory.U15]} 
-                  strokeWidth={getStrokeWidth(MembershipCategory.U15)} 
+                <Line
+                  type="monotone"
+                  dataKey="revenue_U15"
+                  name="U15 Revenue"
+                  stroke={getColor(MembershipCategory.U15)}
+                  strokeWidth={getStrokeWidth(MembershipCategory.U15)}
                   strokeOpacity={getOpacity(MembershipCategory.U15)}
-                  dot={{ r: 4, fill: CATEGORY_COLORS[MembershipCategory.U15], strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.U15) }}
+                  dot={{ r: 4, fill: getColor(MembershipCategory.U15), strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.U15) }}
                   activeDot={{ r: 6 }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue_Senior" 
-                  name="Senior Revenue" 
-                  stroke={CATEGORY_COLORS[MembershipCategory.Senior]} 
+                <Line
+                  type="monotone"
+                  dataKey="revenue_Senior"
+                  name="Senior Revenue"
+                  stroke={getColor(MembershipCategory.Senior)}
                   strokeWidth={getStrokeWidth(MembershipCategory.Senior)}
                   strokeOpacity={getOpacity(MembershipCategory.Senior)}
-                  dot={{ r: 4, fill: CATEGORY_COLORS[MembershipCategory.Senior], strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Senior) }}
+                  dot={{ r: 4, fill: getColor(MembershipCategory.Senior), strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Senior) }}
                   activeDot={{ r: 6 }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue_Student" 
-                  name="Student Revenue" 
-                  stroke={CATEGORY_COLORS[MembershipCategory.Student]} 
+                <Line
+                  type="monotone"
+                  dataKey="revenue_Student"
+                  name="Student Revenue"
+                  stroke={getColor(MembershipCategory.Student)}
                   strokeWidth={getStrokeWidth(MembershipCategory.Student)}
                   strokeOpacity={getOpacity(MembershipCategory.Student)}
-                  dot={{ r: 4, fill: CATEGORY_COLORS[MembershipCategory.Student], strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Student) }}
+                  dot={{ r: 4, fill: getColor(MembershipCategory.Student), strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Student) }}
                   activeDot={{ r: 6 }}
                 />
-                {/* Added other categories for completeness if user highlights them */}
-                <Line 
-                  type="monotone" 
-                  dataKey="revenue_Junior" 
-                  name="Junior Revenue" 
-                  stroke={CATEGORY_COLORS[MembershipCategory.Junior]} 
+                <Line
+                  type="monotone"
+                  dataKey="revenue_Junior"
+                  name="Junior Revenue"
+                  stroke={getColor(MembershipCategory.Junior)}
                   strokeWidth={getStrokeWidth(MembershipCategory.Junior)}
                   strokeOpacity={getOpacity(MembershipCategory.Junior)}
-                  dot={{ r: 4, fill: CATEGORY_COLORS[MembershipCategory.Junior], strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Junior) }}
+                  dot={{ r: 4, fill: getColor(MembershipCategory.Junior), strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Junior) }}
                   activeDot={{ r: 6 }}
                 />
-                 <Line 
-                  type="monotone" 
-                  dataKey="revenue_Masters" 
-                  name="Masters Revenue" 
-                  stroke={CATEGORY_COLORS[MembershipCategory.Masters]} 
+                 <Line
+                  type="monotone"
+                  dataKey="revenue_Masters"
+                  name="Masters Revenue"
+                  stroke={getColor(MembershipCategory.Masters)}
                   strokeWidth={getStrokeWidth(MembershipCategory.Masters)}
                   strokeOpacity={getOpacity(MembershipCategory.Masters)}
-                  dot={{ r: 4, fill: CATEGORY_COLORS[MembershipCategory.Masters], strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Masters) }}
+                  dot={{ r: 4, fill: getColor(MembershipCategory.Masters), strokeWidth: 0, fillOpacity: getOpacity(MembershipCategory.Masters) }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </section>
+
+        {/* Chart Section 2: Stacked Bar - Total Volume */}
+        <section className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Monthly Membership Sales Volume</h2>
+              <p className="text-sm text-slate-500">Total units sold per month by category</p>
+            </div>
+            {/* Simple Legend for Quick Reference */}
+            <div className="hidden sm:flex gap-4 text-xs">
+               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getColor(MembershipCategory.U15) }}></span> U15</div>
+               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getColor(MembershipCategory.Senior) }}></span> Senior</div>
+            </div>
+          </div>
+          
+          <div className="h-[400px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={filteredTimeline}
+                margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dy={10}
+                />
+                <YAxis
+                  tick={{ fill: '#64748b', fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  dx={-10}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                
+                {Object.values(MembershipCategory).map((cat) => (
+                  <Bar
+                    key={cat}
+                    dataKey={cat}
+                    stackId="a"
+                    fill={getColor(cat)}
+                    name={cat.replace(' Club Membership', '')}
+                    fillOpacity={getOpacity(cat)}
+                  />
+                ))}
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </section>
@@ -370,7 +378,7 @@ const App: React.FC = () => {
                       {bhcDistribution.data.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
-                          fill={CATEGORY_COLORS[entry.name as MembershipCategory]} 
+                          fill={getColor(entry.name as MembershipCategory)}
                           fillOpacity={getOpacity(entry.name as MembershipCategory)}
                           strokeWidth={0}
                         />
@@ -413,7 +421,7 @@ const App: React.FC = () => {
                       {playLocalDistribution.data.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
-                          fill={CATEGORY_COLORS[entry.name as MembershipCategory]} 
+                          fill={getColor(entry.name as MembershipCategory)}
                           fillOpacity={getOpacity(entry.name as MembershipCategory)}
                           strokeWidth={0}
                         />

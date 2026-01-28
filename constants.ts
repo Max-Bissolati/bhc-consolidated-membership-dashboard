@@ -171,10 +171,23 @@ export const RAW_DATA_MAPPING = [
   { csv: RAW_PL_MASTERS, category: MembershipCategory.Masters, source: 'PlayLocal' as const },
 ];
 
-export const CATEGORY_COLORS = {
-  [MembershipCategory.U15]: '#10b981', // Emerald 500
+// Default grayscale palette - Modern monochromatic design
+export const GRAYSCALE_COLORS: Record<MembershipCategory, string> = {
+  [MembershipCategory.U15]: '#9ca3af',     // Gray 400
+  [MembershipCategory.Student]: '#6b7280', // Gray 500
+  [MembershipCategory.Junior]: '#4b5563',  // Gray 600
+  [MembershipCategory.Senior]: '#374151',  // Gray 700
+  [MembershipCategory.Masters]: '#1f2937', // Gray 800
+};
+
+// Highlight colors - Vibrant palette only shown when highlighted
+export const HIGHLIGHT_COLORS: Record<MembershipCategory, string> = {
+  [MembershipCategory.U15]: '#10b981',     // Emerald 500
   [MembershipCategory.Student]: '#3b82f6', // Blue 500
-  [MembershipCategory.Junior]: '#f59e0b', // Amber 500
-  [MembershipCategory.Senior]: '#6366f1', // Indigo 500
+  [MembershipCategory.Junior]: '#f59e0b',  // Amber 500
+  [MembershipCategory.Senior]: '#6366f1',  // Indigo 500
   [MembershipCategory.Masters]: '#ef4444', // Red 500
 };
+
+// Legacy export for backwards compatibility
+export const CATEGORY_COLORS = HIGHLIGHT_COLORS;
