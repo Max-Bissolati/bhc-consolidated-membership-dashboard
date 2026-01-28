@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import { BarChart3, TrendingUp, Users, Wallet, PieChart as PieIcon, Filter, Check, Calendar } from 'lucide-react';
 import { getRawTimeline, aggregateStats } from './services/dataProcessing';
-import { GRAYSCALE_COLORS, HIGHLIGHT_COLORS } from './constants';
+import { CATEGORY_COLORS, HIGHLIGHT_COLORS, BHC_COLORS } from './constants';
 import { MembershipCategory } from './types';
 import { CustomTooltip } from './components/CustomTooltip';
 
@@ -61,21 +61,16 @@ const App: React.FC = () => {
   // Helper to determine visual styles based on highlight state
   const getOpacity = (category: MembershipCategory) => {
     if (highlightedCategories.size === 0) return 1;
-    return highlightedCategories.has(category) ? 1 : 0.2;
+    return highlightedCategories.has(category) ? 1 : 0.3;
   };
 
   const getStrokeWidth = (category: MembershipCategory) => {
     if (highlightedCategories.size === 0) return 3;
-    return highlightedCategories.has(category) ? 4 : 1;
+    return highlightedCategories.has(category) ? 4 : 2;
   };
 
   const getColor = (category: MembershipCategory): string => {
-    if (highlightedCategories.size === 0) {
-      return GRAYSCALE_COLORS[category];
-    }
-    return highlightedCategories.has(category)
-      ? HIGHLIGHT_COLORS[category]
-      : GRAYSCALE_COLORS[category];
+    return CATEGORY_COLORS[category];
   };
 
   return (
@@ -83,10 +78,8 @@ const App: React.FC = () => {
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-sm">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/Media/BHC-Logo-Maroon.svg" alt="BHC Logo" className="h-10 w-10" />
             <h1 className="text-xl font-bold text-slate-900 tracking-tight">BHC Membership Analytics</h1>
           </div>
           <div className="hidden sm:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-medium text-slate-600">
@@ -169,7 +162,7 @@ const App: React.FC = () => {
         
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start justify-between group hover:border-indigo-100 transition-colors">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start justify-between group hover:border-[#641932]/20 transition-colors">
             <div>
               <p className="text-sm font-medium text-slate-500">Net Revenue</p>
               <h3 className="text-2xl font-bold text-slate-900 mt-1">
@@ -180,35 +173,35 @@ const App: React.FC = () => {
                 Selected Period
               </p>
             </div>
-            <div className="bg-slate-50 p-3 rounded-lg group-hover:bg-indigo-50 transition-colors">
-              <Wallet className="w-6 h-6 text-slate-600 group-hover:text-indigo-600" />
+            <div className="bg-slate-50 p-3 rounded-lg group-hover:bg-[#641932]/5 transition-colors">
+              <Wallet className="w-6 h-6 text-slate-600 group-hover:text-[#641932]" />
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start justify-between group hover:border-indigo-100 transition-colors">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start justify-between group hover:border-[#641932]/20 transition-colors">
             <div>
               <p className="text-sm font-medium text-slate-500">Memberships Sold</p>
               <h3 className="text-2xl font-bold text-slate-900 mt-1">
                 {totalMembers}
               </h3>
-              <p className="text-xs text-indigo-600 mt-1 flex items-center bg-indigo-50 w-fit px-2 py-0.5 rounded-full">
+              <p className="text-xs text-[#641932] mt-1 flex items-center bg-[#641932]/10 w-fit px-2 py-0.5 rounded-full">
                 <Users className="w-3 h-3 mr-1" />
                 Volume
               </p>
             </div>
-            <div className="bg-slate-50 p-3 rounded-lg group-hover:bg-indigo-50 transition-colors">
-              <Users className="w-6 h-6 text-slate-600 group-hover:text-indigo-600" />
+            <div className="bg-slate-50 p-3 rounded-lg group-hover:bg-[#641932]/5 transition-colors">
+              <Users className="w-6 h-6 text-slate-600 group-hover:text-[#641932]" />
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start justify-between group hover:border-amber-100 transition-colors">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start justify-between group hover:border-[#15254B]/20 transition-colors">
             <div>
               <p className="text-sm font-medium text-slate-500">Data Scope</p>
               <h3 className="text-lg font-bold text-slate-900 mt-1">{startDate} <span className="text-slate-400 mx-1">→</span> {endDate}</h3>
               <p className="text-xs text-slate-400 mt-2">Inclusive Range</p>
             </div>
-            <div className="bg-slate-50 p-3 rounded-lg group-hover:bg-amber-50 transition-colors">
-              <Filter className="w-6 h-6 text-slate-600 group-hover:text-amber-600" />
+            <div className="bg-slate-50 p-3 rounded-lg group-hover:bg-[#15254B]/5 transition-colors">
+              <Filter className="w-6 h-6 text-slate-600 group-hover:text-[#15254B]" />
             </div>
           </div>
         </div>
@@ -399,7 +392,7 @@ const App: React.FC = () => {
           {/* New PlayLocal */}
           <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col">
              <div className="flex items-center gap-2 mb-4">
-              <PieIcon className="w-5 h-5 text-indigo-500" />
+              <PieIcon className="w-5 h-5 text-[#641932]" />
               <h2 className="text-lg font-bold text-slate-900">New Mix (PlayLocal)</h2>
             </div>
             <p className="text-xs text-slate-500 mb-6 uppercase tracking-wider font-semibold border-b border-slate-100 pb-2">
