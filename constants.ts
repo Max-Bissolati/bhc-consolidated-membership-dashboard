@@ -171,24 +171,13 @@ export const RAW_DATA_MAPPING = [
   { csv: RAW_PL_MASTERS, category: MembershipCategory.Masters, source: 'PlayLocal' as const },
 ];
 
-// BHC Brand Colors
-export const BHC_COLORS = {
-  MAROON: '#641932',      // Primary accent color
-  MAROON_LIGHT: '#8B2A47',
-  MAROON_DARK: '#4A1225',
-  NAVY: '#15254B',         // Secondary color
-  NAVY_LIGHT: '#1E3A6B',
-  NAVY_DARK: '#0F1A35',
-  WHITE: '#FFFFFF',
-};
-
-// Category colors - Maroon accent variations with complementary colors
+// Original vibrant color palette
 export const CATEGORY_COLORS: Record<MembershipCategory, string> = {
-  [MembershipCategory.U15]: '#641932',      // Maroon (Primary)
-  [MembershipCategory.Student]: '#15254B',  // Navy (Secondary)
-  [MembershipCategory.Junior]: '#8B2A47',   // Light Maroon
-  [MembershipCategory.Senior]: '#1E3A6B',    // Light Navy
-  [MembershipCategory.Masters]: '#4A1225',   // Dark Maroon
+  [MembershipCategory.U15]: '#10b981', // Emerald 500
+  [MembershipCategory.Student]: '#3b82f6', // Blue 500
+  [MembershipCategory.Junior]: '#f59e0b', // Amber 500
+  [MembershipCategory.Senior]: '#6366f1', // Indigo 500
+  [MembershipCategory.Masters]: '#ef4444', // Red 500
 };
 
 // Highlight colors - Same colors for consistency
