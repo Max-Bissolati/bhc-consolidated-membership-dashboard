@@ -80,9 +80,17 @@ export const aggregateStats = (timeline: ConsolidatedMonth[]): {
   playLocalDistribution: PeriodSummary;
   totalRevenue: number;
   totalMembers: number;
+  categoryRevenue: Record<MembershipCategory, number>;
 } => {
-  const bhcTotals: Record<string, number> = {};
-  const plTotals: Record<string, number> = {};
+  const bhcRevenue: Record<string, number> = {};
+  const plRevenue: Record<string, number> = {};
+  const categoryRevenue: Record<string, number> = {
+    [MembershipCategory.U15]: 0,
+    [MembershipCategory.Student]: 0,
+    [MembershipCategory.Junior]: 0,
+    [MembershipCategory.Senior]: 0,
+    [MembershipCategory.Masters]: 0,
+  };
 
   let totalRevenue = 0;
   let totalMembers = 0;
@@ -91,42 +99,47 @@ export const aggregateStats = (timeline: ConsolidatedMonth[]): {
     totalRevenue += month.totalRevenue;
     totalMembers += month.totalSold;
 
-    // Distribution logic based on date
-    // BHC Period: Dates < '2025-03'
-    // PlayLocal Period: Dates >= '2025-03'
     const isBhc = month.date < '2025-03';
     
-    // We need to iterate categories to sum them up for the period
-    Object.values(MembershipCategory).forEach(cat => {
-      // Use type assertion to access dynamic property safely
-      const count = month[cat as keyof ConsolidatedMonth];
-      
-      // Ensure count is a number and greater than 0
-      if (typeof count === 'number' && count > 0) {
+    // Revenue mapping for current month
+    const monthRevenue: Record<MembershipCategory, number> = {
+      [MembershipCategory.U15]: month.revenue_U15,
+      [MembershipCategory.Student]: month.revenue_Student,
+      [MembershipCategory.Junior]: month.revenue_Junior,
+      [MembershipCategory.Senior]: month.revenue_Senior,
+      [MembershipCategory.Masters]: month.revenue_Masters,
+    };
+
+    Object.entries(monthRevenue).forEach(([cat, revenue]) => {
+      if (revenue > 0) {
+        // Aggregate for pie charts (By Period)
         if (isBhc) {
-          bhcTotals[cat] = (bhcTotals[cat] || 0) + count;
+          bhcRevenue[cat] = (bhcRevenue[cat] || 0) + revenue;
         } else {
-          plTotals[cat] = (plTotals[cat] || 0) + count;
+          plRevenue[cat] = (plRevenue[cat] || 0) + revenue;
         }
+        // Aggregate total revenue per category (For dynamic KPI)
+        categoryRevenue[cat] = (categoryRevenue[cat] || 0) + revenue;
       }
     });
   });
 
   const bhcDistribution: PeriodSummary = {
     name: 'Legacy (BHC)',
-    data: Object.entries(bhcTotals).map(([name, value]) => ({ name, value })),
+    data: Object.entries(bhcRevenue).map(([name, value]) => ({ name, value })),
   };
 
   const playLocalDistribution: PeriodSummary = {
     name: 'New (PlayLocal)',
-    data: Object.entries(plTotals).map(([name, value]) => ({ name, value })),
+    data: Object.entries(plRevenue).map(([name, value]) => ({ name, value })),
   };
 
   return {
     bhcDistribution,
     playLocalDistribution,
     totalRevenue,
-    totalMembers
+    totalMembers,
+    categoryRevenue: categoryRevenue as Record<MembershipCategory, number>
   };
 };
 

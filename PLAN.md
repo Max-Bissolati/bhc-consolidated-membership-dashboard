@@ -1,270 +1,170 @@
-# BHC Membership Analytics - Implementation Plan
+# BHC Membership Analytics - Revenue-Focused Updates
 
 ## Overview
-This plan outlines the architectural changes required to update the Membership Sales Dashboard with:
-1. Revenue chart prioritized to the top
-2. Modern monochromatic grayscale design with color-on-highlight behavior
-3. Naming alignment with "BHC Membership Analytics"
-4. Updated README documentation
+This plan implements revenue-focused changes to prioritize financial metrics over volume metrics.
 
 ---
 
-## 1. Chart Reordering - Revenue First
+## 1. Pie Charts: Revenue-Based Distribution
 
-### Current Order (App.tsx)
-```
-main
-├── KPI Cards (lines 161-205)
-├── Monthly Membership Sales Volume - BarChart (lines 207-257)  ← 1st chart
-├── Revenue Trend Analysis - LineChart (lines 259-344)          ← 2nd chart
-└── Distribution Pie Charts (lines 346-433)
-```
+### Current State
+- `aggregateStats()` in `dataProcessing.ts` aggregates **member counts** for pie charts
+- Lines 100-112 sum `month[cat]` (netSold counts)
 
-### Target Order
-```
-main
-├── KPI Cards (unchanged)
-├── Revenue Trend Analysis - LineChart                          ← MOVE TO TOP
-├── Monthly Membership Sales Volume - BarChart                  ← Move down
-└── Distribution Pie Charts (unchanged)
-```
+### Target State
+- Pie charts show **revenue distribution** instead of member counts
+- Uses revenue fields: `revenue_U15`, `revenue_Student`, `revenue_Junior`, `revenue_Senior`, `revenue_Masters`
 
-### Implementation
-**File:** `App.tsx`
-- Cut lines 259-344 (Revenue Trend Analysis section)
-- Paste immediately after line 205 (after KPI cards, before BarChart)
+### Implementation - dataProcessing.ts
+
+```typescript
+// Change distribution logic to use revenue instead of counts
+export const aggregateStats = (timeline: ConsolidatedMonth[]): {
+  bhcDistribution: PeriodSummary;
+  playLocalDistribution: PeriodSummary;
+  totalRevenue: number;
+  totalMembers: number;
+  categoryRevenue: Record<MembershipCategory, number>; // NEW
+} => {
+  const bhcRevenue: Record<string, number> = {};
+  const plRevenue: Record<string, number> = {};
+  const categoryRevenue: Record<string, number> = {}; // Track per-category totals
+
+  // ... existing totalRevenue/totalMembers calculation ...
+
+  timeline.forEach(month => {
+    const isBhc = month.date < '2025-03';
+    
+    // Map categories to their revenue fields
+    const revenueMapping: Record<MembershipCategory, number> = {
+      [MembershipCategory.U15]: month.revenue_U15,
+      [MembershipCategory.Student]: month.revenue_Student,
+      [MembershipCategory.Junior]: month.revenue_Junior,
+      [MembershipCategory.Senior]: month.revenue_Senior,
+      [MembershipCategory.Masters]: month.revenue_Masters,
+    };
+
+    Object.entries(revenueMapping).forEach(([cat, revenue]) => {
+      if (revenue > 0) {
+        // Aggregate for pie charts
+        if (isBhc) {
+          bhcRevenue[cat] = (bhcRevenue[cat] || 0) + revenue;
+        } else {
+          plRevenue[cat] = (plRevenue[cat] || 0) + revenue;
+        }
+        // Aggregate per-category totals
+        categoryRevenue[cat] = (categoryRevenue[cat] || 0) + revenue;
+      }
+    });
+  });
+
+  return {
+    bhcDistribution: {
+      name: 'Legacy (BHC)',
+      data: Object.entries(bhcRevenue).map(([name, value]) => ({ name, value })),
+    },
+    playLocalDistribution: {
+      name: 'New (PlayLocal)',
+      data: Object.entries(plRevenue).map(([name, value]) => ({ name, value })),
+    },
+    totalRevenue,
+    totalMembers,
+    categoryRevenue: categoryRevenue as Record<MembershipCategory, number>,
+  };
+};
+```
 
 ---
 
-## 2. Modern Monochromatic Design System
+## 2. Dynamic Net Revenue KPI Widget
 
-### 2.1 New Color Palettes (constants.ts)
+### Current State
+- Lines 167-181 in `App.tsx` show static `totalRevenue`
+- No interaction with category filters
 
-Replace `CATEGORY_COLORS` with a dual-palette system:
+### Target State
+- When **no categories highlighted**: Show total revenue with label "All Categories"
+- When **categories highlighted**: Show sum of highlighted categories' revenue
+- Dynamic label showing which category(ies) are selected
 
-```typescript
-// Default grayscale palette - Modern monochromatic design
-export const GRAYSCALE_COLORS: Record<MembershipCategory, string> = {
-  [MembershipCategory.U15]: '#9ca3af',     // Gray 400
-  [MembershipCategory.Student]: '#6b7280', // Gray 500
-  [MembershipCategory.Junior]: '#4b5563',  // Gray 600
-  [MembershipCategory.Senior]: '#374151',  // Gray 700
-  [MembershipCategory.Masters]: '#1f2937', // Gray 800
-};
-
-// Highlight colors - Vibrant palette only shown when highlighted
-export const HIGHLIGHT_COLORS: Record<MembershipCategory, string> = {
-  [MembershipCategory.U15]: '#10b981',     // Emerald 500
-  [MembershipCategory.Student]: '#3b82f6', // Blue 500
-  [MembershipCategory.Junior]: '#f59e0b',  // Amber 500
-  [MembershipCategory.Senior]: '#6366f1',  // Indigo 500
-  [MembershipCategory.Masters]: '#ef4444', // Red 500
-};
-
-// Legacy export for backwards compatibility (remove after migration)
-export const CATEGORY_COLORS = GRAYSCALE_COLORS;
-```
-
-### 2.2 Dynamic Color Logic (App.tsx)
-
-Update the color getter function to return grayscale by default, colors only on highlight:
+### Implementation - App.tsx
 
 ```typescript
-// Import both palettes
-import { GRAYSCALE_COLORS, HIGHLIGHT_COLORS } from './constants';
-
-// New dynamic color getter - grayscale default, color on highlight
-const getColor = (category: MembershipCategory): string => {
+// Calculate dynamic revenue based on highlighted categories
+const displayRevenue = useMemo(() => {
   if (highlightedCategories.size === 0) {
-    return GRAYSCALE_COLORS[category]; // Default: grayscale
+    return { value: totalRevenue, label: 'All Categories' };
   }
-  return highlightedCategories.has(category)
-    ? HIGHLIGHT_COLORS[category]  // Highlighted: vibrant color
-    : GRAYSCALE_COLORS[category]; // Not highlighted: stays grayscale
-};
-```
+  
+  // Sum revenue for highlighted categories only
+  const highlightedRevenue = Array.from(highlightedCategories).reduce((sum, cat) => {
+    return sum + (categoryRevenue[cat] || 0);
+  }, 0);
+  
+  // Build label from highlighted category names
+  const categoryNames = Array.from(highlightedCategories)
+    .map(cat => cat.replace(' Club Membership', ''))
+    .join(', ');
+  
+  return { value: highlightedRevenue, label: categoryNames };
+}, [highlightedCategories, categoryRevenue, totalRevenue]);
 
-### 2.3 Chart Updates Required
-
-Replace all `CATEGORY_COLORS[cat]` references with `getColor(cat)`:
-
-| Component | Location | Change |
-|-----------|----------|--------|
-| BarChart | `Bar.fill` | `fill={getColor(cat)}` |
-| LineChart | `Line.stroke` | `stroke={getColor(category)}` |
-| LineChart | `Line.dot.fill` | `fill: getColor(category)` |
-| PieChart | `Cell.fill` | `fill={getColor(entry.name)}` |
-| Filter buttons | Legend dot color | `backgroundColor: getColor(cat)` |
-| Section legends | Quick reference dots | Use CSS or dynamic color |
-
-### 2.4 Filter Button Color Updates (App.tsx lines 126-144)
-
-Update the highlight filter buttons to also use dynamic colors:
-
-```typescript
-<span 
-  className={`w-2 h-2 rounded-full ${isActive ? '' : ''}`} 
-  style={{ 
-    backgroundColor: isActive 
-      ? HIGHLIGHT_COLORS[cat]  // Show vibrant color when active
-      : GRAYSCALE_COLORS[cat]  // Grayscale when inactive
-  }} 
-/>
+// Update KPI Card JSX
+<div className="bg-white p-6 rounded-xl ...">
+  <div>
+    <p className="text-sm font-medium text-slate-500">Net Revenue</p>
+    <h3 className="text-2xl font-bold text-slate-900 mt-1">
+      {formatCurrency(displayRevenue.value)}
+    </h3>
+    <p className="text-xs text-green-600 mt-1 flex items-center bg-green-50 ...">
+      <TrendingUp className="w-3 h-3 mr-1" />
+      {displayRevenue.label}  {/* Dynamic label */}
+    </p>
+  </div>
+  ...
+</div>
 ```
 
 ---
 
-## 3. Naming Alignment - "BHC Membership Analytics"
+## 3. Pie Chart Tooltip Update
 
-### 3.1 Files to Update
+### Current State
+- `CustomTooltip` component shows values without currency formatting for pie charts
 
-| File | Location | Current | New |
-|------|----------|---------|-----|
-| `index.html` | Line 6 `<title>` | "Membership Sales Dashboard" | "BHC Membership Analytics" |
-| `App.tsx` | Line 81 `<h1>` | "Membership Analytics" | "BHC Membership Analytics" |
-| `package.json` | Line 2 `name` | "membership-sales-analyst-dashboard" | "bhc-membership-analytics" |
+### Target State
+- Pie chart tooltips show revenue values formatted as currency
+
+### Implementation - CustomTooltip.tsx or App.tsx
+
+Option 1: Pass `currency={true}` to pie chart tooltips:
+```tsx
+<Tooltip content={<CustomTooltip currency />} />
+```
 
 ---
 
-## 4. README.md Update
+## 4. Files to Modify
 
-Replace the current AI Studio template with proper project documentation:
-
-```markdown
-# BHC Membership Analytics Dashboard
-
-A modern analytics dashboard for visualizing BHC (Bellville Hockey Club) membership sales data across multiple categories and time periods.
-
-## Features
-
-- **Revenue Analysis**: Trend visualization of membership revenue over time
-- **Sales Volume Tracking**: Stacked bar charts showing monthly membership sales
-- **Distribution Insights**: Pie charts comparing Legacy (BHC) vs New (PlayLocal) membership mix
-- **Interactive Filtering**: Date range selection and category highlighting
-- **Modern Design**: Monochromatic grayscale theme with color-on-highlight interaction
-
-## Membership Categories
-
-- U15 Club Membership
-- Student Club Membership
-- Junior Club Membership
-- Senior Club Membership
-- Masters Club Membership
-
-## Data Sources
-
-- **Legacy (BHC)**: Oct 2024 – Feb 2025
-- **New (PlayLocal)**: Mar 2025 – Jan 2026
-
-## Tech Stack
-
-- **React 19** - UI Framework
-- **TypeScript** - Type Safety
-- **Recharts** - Chart Library
-- **Tailwind CSS** - Styling
-- **Vite** - Build Tool
-- **Lucide React** - Icons
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v18+)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-org/bhc-membership-analytics.git
-   cd bhc-membership-analytics
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
-
-4. Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-## Project Structure
-
-```
-├── App.tsx                    # Main application component
-├── constants.ts               # Color palettes and raw data
-├── types.ts                   # TypeScript interfaces and enums
-├── index.html                 # HTML entry point
-├── index.tsx                  # React entry point
-├── components/
-│   └── CustomTooltip.tsx      # Reusable tooltip component
-├── services/
-│   └── dataProcessing.ts      # Data transformation utilities
-└── package.json               # Dependencies and scripts
-```
-
-## Deployment
-
-Build for production:
-```bash
-npm run build
-```
-
-Preview production build:
-```bash
-npm run preview
-```
-
-## License
-
-Private - Bellville Hockey Club
-```
+| File | Changes |
+|------|---------|
+| `services/dataProcessing.ts` | Aggregate revenue for distributions, add `categoryRevenue` return |
+| `App.tsx` | Add `displayRevenue` computed value, update KPI card JSX, add currency to pie tooltips |
 
 ---
 
 ## 5. Implementation Checklist
 
-- [ ] **constants.ts**: Add `GRAYSCALE_COLORS` and `HIGHLIGHT_COLORS` palettes
-- [ ] **App.tsx**: Add `getColor()` helper function
-- [ ] **App.tsx**: Update BarChart to use `getColor(cat)`
-- [ ] **App.tsx**: Update LineChart to use `getColor(category)`
-- [ ] **App.tsx**: Update PieChart cells to use `getColor(entry.name)`
-- [ ] **App.tsx**: Update filter button styling to use dynamic colors
-- [ ] **App.tsx**: Move Revenue LineChart section above BarChart section
-- [ ] **App.tsx**: Update header to "BHC Membership Analytics"
-- [ ] **App.tsx**: Update section legend dots to use grayscale by default
-- [ ] **index.html**: Update title to "BHC Membership Analytics"
-- [ ] **package.json**: Update name to "bhc-membership-analytics"
-- [ ] **README.md**: Replace with project documentation
-
----
-
-## 6. Visual Design Reference
-
-### Default State (No Highlight)
-- All chart elements render in **grayscale** (gray-400 to gray-800)
-- Creates a sophisticated, modern monochromatic look
-- Reduces visual noise, improves data focus
-
-### Highlighted State
-- Selected categories pop with **vibrant accent colors**
-- Non-selected categories remain grayscale
-- Creates clear visual hierarchy and contrast
-
-### Color Mapping
-
-| Category | Grayscale (Default) | Highlight Color |
-|----------|---------------------|-----------------|
-| U15 | `#9ca3af` (Gray 400) | `#10b981` (Emerald) |
-| Student | `#6b7280` (Gray 500) | `#3b82f6` (Blue) |
-| Junior | `#4b5563` (Gray 600) | `#f59e0b` (Amber) |
-| Senior | `#374151` (Gray 700) | `#6366f1` (Indigo) |
-| Masters | `#1f2937` (Gray 800) | `#ef4444` (Red) |
+- [ ] **dataProcessing.ts**: Change `bhcTotals`/`plTotals` to aggregate revenue instead of counts
+- [ ] **dataProcessing.ts**: Add `categoryRevenue` to return type and calculation
+- [ ] **App.tsx**: Destructure `categoryRevenue` from `aggregateStats`
+- [ ] **App.tsx**: Add `displayRevenue` useMemo hook
+- [ ] **App.tsx**: Update Net Revenue KPI to use `displayRevenue.value` and `displayRevenue.label`
+- [ ] **App.tsx**: Add `currency` prop to pie chart Tooltip components
+- [ ] Push changes to GitHub
 
 ---
 
 ## Ready for Implementation
 
-This plan is ready for **Code++ (Gemini 3 Pro)** to execute. All changes are clearly defined with specific file locations and code snippets.
+Architecture complete. Switch to **Code++** for implementation.

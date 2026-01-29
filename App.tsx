@@ -35,7 +35,7 @@ const App: React.FC = () => {
   }, [rawTimeline, startDate, endDate]);
 
   // Recalculate stats based on filtered data
-  const { bhcDistribution, playLocalDistribution, totalRevenue, totalMembers } = useMemo(
+  const { bhcDistribution, playLocalDistribution, totalRevenue, totalMembers, categoryRevenue } = useMemo(
     () => aggregateStats(filteredTimeline),
     [filteredTimeline]
   );
@@ -72,6 +72,23 @@ const App: React.FC = () => {
   const getColor = (category: MembershipCategory): string => {
     return CATEGORY_COLORS[category];
   };
+
+  // Dynamic Revenue calculation for KPI card
+  const displayRevenue = useMemo(() => {
+    if (highlightedCategories.size === 0) {
+      return { value: totalRevenue, label: 'Selected Period' };
+    }
+    
+    const sum = Array.from(highlightedCategories).reduce((acc, cat) => {
+      return acc + (categoryRevenue[cat] || 0);
+    }, 0);
+
+    const label = Array.from(highlightedCategories)
+      .map(cat => (cat as string).replace(' Club Membership', ''))
+      .join(', ');
+
+    return { value: sum, label };
+  }, [highlightedCategories, totalRevenue, categoryRevenue]);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-12">
@@ -168,11 +185,11 @@ const App: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-slate-500">Net Revenue</p>
               <h3 className="text-2xl font-bold text-slate-900 mt-1">
-                {formatCurrency(totalRevenue)}
+                {formatCurrency(displayRevenue.value)}
               </h3>
               <p className="text-xs text-green-600 mt-1 flex items-center bg-green-50 w-fit px-2 py-0.5 rounded-full">
                 <TrendingUp className="w-3 h-3 mr-1" />
-                Selected Period
+                {displayRevenue.label}
               </p>
             </div>
             <div className="bg-slate-50 p-3 rounded-lg group-hover:bg-indigo-50 transition-colors">
@@ -352,7 +369,7 @@ const App: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col">
             <div className="flex items-center gap-2 mb-4">
               <PieIcon className="w-5 h-5 text-slate-400" />
-              <h2 className="text-lg font-bold text-slate-900">Legacy Mix (BHC)</h2>
+              <h2 className="text-lg font-bold text-slate-900">Legacy Revenue Mix (BHC)</h2>
             </div>
             <p className="text-xs text-slate-500 mb-6 uppercase tracking-wider font-semibold border-b border-slate-100 pb-2">
               Oct '24 – Feb '25 (Filtered)
@@ -371,15 +388,15 @@ const App: React.FC = () => {
                       dataKey="value"
                     >
                       {bhcDistribution.data.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
+                        <Cell
+                          key={`cell-${index}`}
                           fill={getColor(entry.name as MembershipCategory)}
                           fillOpacity={getOpacity(entry.name as MembershipCategory)}
                           strokeWidth={0}
                         />
                       ))}
                     </Pie>
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip currency />} />
                     <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
                   </PieChart>
                 </ResponsiveContainer>
@@ -395,7 +412,7 @@ const App: React.FC = () => {
           <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 flex flex-col">
              <div className="flex items-center gap-2 mb-4">
               <PieIcon className="w-5 h-5 text-indigo-500" />
-              <h2 className="text-lg font-bold text-slate-900">New Mix (PlayLocal)</h2>
+              <h2 className="text-lg font-bold text-slate-900">New Revenue Mix (PlayLocal)</h2>
             </div>
             <p className="text-xs text-slate-500 mb-6 uppercase tracking-wider font-semibold border-b border-slate-100 pb-2">
               Mar '25 – Jan '26 (Filtered)
@@ -414,15 +431,15 @@ const App: React.FC = () => {
                       dataKey="value"
                     >
                       {playLocalDistribution.data.map((entry, index) => (
-                        <Cell 
-                          key={`cell-${index}`} 
+                        <Cell
+                          key={`cell-${index}`}
                           fill={getColor(entry.name as MembershipCategory)}
                           fillOpacity={getOpacity(entry.name as MembershipCategory)}
                           strokeWidth={0}
                         />
                       ))}
                     </Pie>
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip currency />} />
                     <Legend layout="horizontal" verticalAlign="bottom" align="center" iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '20px' }} />
                   </PieChart>
                 </ResponsiveContainer>
