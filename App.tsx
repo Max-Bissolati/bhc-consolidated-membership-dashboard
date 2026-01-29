@@ -96,10 +96,10 @@ const App: React.FC = () => {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-indigo-600 p-2 rounded-lg shadow-sm">
-              <BarChart3 className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-3">
+              <img src="/Media/BHC-Logo-Maroon.svg" alt="BHC Logo" className="h-10 w-auto" />
+              <h1 className="text-xl font-bold text-slate-900 tracking-tight">BHC Membership Analytics</h1>
             </div>
-            <h1 className="text-xl font-bold text-slate-900 tracking-tight">BHC Membership Analytics</h1>
           </div>
           <div className="hidden sm:flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full text-xs font-medium text-slate-600">
             <Calendar className="w-3.5 h-3.5" />
@@ -315,13 +315,8 @@ const App: React.FC = () => {
         <section className="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h2 className="text-lg font-bold text-slate-900">Monthly Membership Sales Volume</h2>
-              <p className="text-sm text-slate-500">Total units sold per month by category</p>
-            </div>
-            {/* Simple Legend for Quick Reference */}
-            <div className="hidden sm:flex gap-4 text-xs">
-               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getColor(MembershipCategory.U15) }}></span> U15</div>
-               <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getColor(MembershipCategory.Senior) }}></span> Senior</div>
+              <h2 className="text-lg font-bold text-slate-900">Monthly Revenue Contribution</h2>
+              <p className="text-sm text-slate-500">Total revenue generated per month by category (ZAR)</p>
             </div>
           </div>
           
@@ -340,24 +335,20 @@ const App: React.FC = () => {
                   dy={10}
                 />
                 <YAxis
+                  tickFormatter={formatCurrencyAxis}
                   tick={{ fill: '#64748b', fontSize: 12 }}
                   axisLine={false}
                   tickLine={false}
                   dx={-10}
                 />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                <Tooltip content={<CustomTooltip currency />} cursor={{ fill: '#f8fafc' }} />
                 <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                 
-                {Object.values(MembershipCategory).map((cat) => (
-                  <Bar
-                    key={cat}
-                    dataKey={cat}
-                    stackId="a"
-                    fill={getColor(cat)}
-                    name={cat.replace(' Club Membership', '')}
-                    fillOpacity={getOpacity(cat)}
-                  />
-                ))}
+                <Bar dataKey="revenue_U15" name="U15" stackId="a" fill={getColor(MembershipCategory.U15)} fillOpacity={getOpacity(MembershipCategory.U15)} />
+                <Bar dataKey="revenue_Student" name="Student" stackId="a" fill={getColor(MembershipCategory.Student)} fillOpacity={getOpacity(MembershipCategory.Student)} />
+                <Bar dataKey="revenue_Junior" name="Junior" stackId="a" fill={getColor(MembershipCategory.Junior)} fillOpacity={getOpacity(MembershipCategory.Junior)} />
+                <Bar dataKey="revenue_Senior" name="Senior" stackId="a" fill={getColor(MembershipCategory.Senior)} fillOpacity={getOpacity(MembershipCategory.Senior)} />
+                <Bar dataKey="revenue_Masters" name="Masters" stackId="a" fill={getColor(MembershipCategory.Masters)} fillOpacity={getOpacity(MembershipCategory.Masters)} />
               </BarChart>
             </ResponsiveContainer>
           </div>
